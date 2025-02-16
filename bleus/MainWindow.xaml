@@ -9,30 +9,63 @@
         Title="MainWindow" Height="356" Width="597" Loaded="Window_Loaded">
     <Window.Resources>
 
+        <Style TargetType="{x:Type Label}" x:Key="LabelStyle_FlagDisp">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="True">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type Label}">
+                                <Border>
+                                    <TextBlock Text="{TemplateBinding Content}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="{x:Type TextBlock}" x:Key="TextBlockStyle_FlagDisp">
+            <Setter Property="Margin" Value="3,1,3,1"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#606060"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
         <Style TargetType="{x:Type ListBox}" x:Key="ListBoxStyle_BLEDevices" BasedOn="{StaticResource {x:Type ListBox}}">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="ItemTemplate">
                 <Setter.Value>
                     <DataTemplate>
-                        <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Vertical" Background="Aquamarine">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{Binding LocalName.Value}" FontWeight="Bold" Margin="0,0,10,0" />
                                 <Button Grid.Column="1" Width="50" Content="Test" />
                             </Grid>
+                            <TextBlock TextWrapping="Wrap">
+                                <TextBlock.Inlines>
+                                    <Run Text="{Binding RawSignalStrengthInDBm.Value}"/><Run Text="dBm"/>
+                                    <Run Text="{Binding DeviceId.Value}"/>
+                                </TextBlock.Inlines>
+                            </TextBlock>
                             <WrapPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding DeviceId.Value}"/>
-                            </WrapPanel>
-                            <WrapPanel Orientation="Horizontal">
-                                <TextBlock>
-                                    <TextBlock.Inlines>
-                                        <Run Text="{Binding RawSignalStrengthInDBm.Value}"/>
-                                        <Run Text="dBm"/>
-                                    </TextBlock.Inlines>
-                                </TextBlock>
+                                <Border>
+                                    <TextBlock Style="{StaticResource TextBlockStyle_FlagDisp}" IsEnabled="False">
+                                        <TextBlock.Inlines>
+                                            <Run Text="{Binding RawSignalStrengthInDBm.Value}"/>
+                                            <Run Text="dBm"/>
+                                        </TextBlock.Inlines>
+                                    </TextBlock>
+                                </Border>
                             </WrapPanel>
                         </StackPanel>
                     </DataTemplate>
