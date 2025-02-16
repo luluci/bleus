@@ -29,7 +29,7 @@ namespace bleus.BLE
             //
             bluetoothAddress = args.BluetoothAddress;
             //
-            LocalName = args.Advertisement.LocalName;
+            LocalName = "<NoDeviceName>";
             RawSignalStrengthInDBm = args.RawSignalStrengthInDBm;
         }
 

@@ -10,33 +10,31 @@
     <Window.Resources>
 
         <Style TargetType="{x:Type ListBox}" x:Key="ListBoxStyle_BLEDevices" BasedOn="{StaticResource {x:Type ListBox}}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="ItemTemplate">
                 <Setter.Value>
                     <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="50"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid Grid.Column="0">
-                                <CheckBox VerticalContentAlignment="Center"/>
+                        <StackPanel Orientation="Vertical">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding LocalName.Value}" FontWeight="Bold" Margin="0,0,10,0" />
+                                <Button Grid.Column="1" Width="50" Content="Test" />
                             </Grid>
-                            <Grid Grid.Column="1">
-                                <StackPanel Orientation="Vertical">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding LocalName.Value}"/>
-                                        <TextBlock Text="{Binding DeviceId.Value}"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock>
-                                            <TextBlock.Inlines>
-                                                <Run Text="{Binding RawSignalStrengthInDBm.Value}"/><Run Text="dBm"/>
-                                            </TextBlock.Inlines>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Grid>
-                        </Grid>
+                            <WrapPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding DeviceId.Value}"/>
+                            </WrapPanel>
+                            <WrapPanel Orientation="Horizontal">
+                                <TextBlock>
+                                    <TextBlock.Inlines>
+                                        <Run Text="{Binding RawSignalStrengthInDBm.Value}"/>
+                                        <Run Text="dBm"/>
+                                    </TextBlock.Inlines>
+                                </TextBlock>
+                            </WrapPanel>
+                        </StackPanel>
                     </DataTemplate>
                 </Setter.Value>
             </Setter>
@@ -47,9 +45,9 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="200*"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="3"/>
-            <RowDefinition Height="200"/>
+            <RowDefinition Height="150"/>
         </Grid.RowDefinitions>
         <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" Background="DarkGray" />
 
@@ -77,7 +75,8 @@
         </Grid>
 
         <Grid Grid.Row="3">
-            <Label Content="device info"/>
+
+            <Label Content="device info" Width="100"/>
         </Grid>
     </Grid>
 </Window>
