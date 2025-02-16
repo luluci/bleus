@@ -8,6 +8,7 @@ using System.Reactive.Disposables;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Data;
 
 namespace bleus
 {
@@ -18,6 +19,7 @@ namespace bleus
         public ReactivePropertySlim<bool> IsScanning { get; set; }
         // BLE
         public ReactiveCollection<BleViewModel.Device> Devices { get; }
+        ListCollectionView deviceCV;
 
         //
         System.Windows.Threading.DispatcherTimer cycleTimer;
@@ -28,6 +30,20 @@ namespace bleus
             //
             Devices = new ReactiveCollection<BleViewModel.Device>();
             //Devices.Add(new BLE.Device(1));
+            var cv = CollectionViewSource.GetDefaultView(Devices);
+            cv.Filter = x =>
+            {
+                if (x is BleViewModel.Device dev)
+                {
+                    return dev.IsActive.Value;
+                }
+                return false;
+            };
+            if (cv is ListCollectionView lcv)
+            {
+                lcv.IsLiveFiltering = true;
+                deviceCV = lcv;
+            }
 
             //
             OnScan = new ReactiveCommand();
@@ -83,9 +99,18 @@ namespace bleus
                             }
                         }
                         // 既存Device情報チェック
+                        // List表示情報に変更があるかチェックする
+                        bool updateList = false;
                         foreach (var device in Devices)
                         {
-                            device.Update();
+                            if (device.Update())
+                            {
+                                updateList = true;
+                            }
+                        }
+                        if (updateList)
+                        {
+                            deviceCV.Refresh();
                         }
                     }
                 }

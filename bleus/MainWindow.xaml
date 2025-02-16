@@ -19,10 +19,22 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <Grid Grid.Column="0">
-                                <CheckBox/>
+                                <CheckBox VerticalContentAlignment="Center"/>
                             </Grid>
                             <Grid Grid.Column="1">
-                                <TextBlock Text="{Binding DeviceId.Value}"/>
+                                <StackPanel Orientation="Vertical">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding LocalName.Value}"/>
+                                        <TextBlock Text="{Binding DeviceId.Value}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock>
+                                            <TextBlock.Inlines>
+                                                <Run Text="{Binding RawSignalStrengthInDBm.Value}"/><Run Text="dBm"/>
+                                            </TextBlock.Inlines>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </StackPanel>
                             </Grid>
                         </Grid>
                     </DataTemplate>

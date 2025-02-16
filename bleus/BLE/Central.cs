@@ -62,15 +62,19 @@ namespace bleus.BLE
                     var key = args.BluetoothAddress;
                     if (!DevicesMap.ContainsKey(key))
                     {
-                        var temp = new Device(args.BluetoothAddress);
+                        var temp = new Device(args);
                         DevicesMap.Add(key, temp);
                         Devices.Add(temp);
+                    }
+                    else
+                    {
+                        // 取得済みのデバイスも再通知される
                     }
                     // デバイス情報取得, 失敗することはありえないが一応チェック
                     if (DevicesMap.TryGetValue(key, out var device))
                     {
                         var timestamp = DateTime.Now;
-                        device.Update(timestamp, dev);
+                        device.Update(timestamp, args, dev);
                     }
                 }
             }

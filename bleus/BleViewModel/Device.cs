@@ -15,11 +15,13 @@ namespace bleus.BleViewModel
         //
         BLE.Device device;
         // Device情報前回取得時間
-        DateTime timestamp;
+        DateTimeOffset timestamp;
         //
         public ReactivePropertySlim<bool> IsActive { get; set; }
         public ReactivePropertySlim<string> DeviceId { get; set; }
         public ReactivePropertySlim<string> BluetoothDeviceId { get; set; }
+        public ReactivePropertySlim<string> LocalName { get; set; }
+        public ReactivePropertySlim<short> RawSignalStrengthInDBm { get; set; }
 
         public Device(BLE.Device dev)
         {
@@ -33,29 +35,47 @@ namespace bleus.BleViewModel
             DeviceId.AddTo(Disposables);
             BluetoothDeviceId = new ReactivePropertySlim<string>("<None>");
             BluetoothDeviceId.AddTo(Disposables);
+            LocalName = new ReactivePropertySlim<string>("<None>");
+            LocalName.AddTo(Disposables);
+            RawSignalStrengthInDBm = new ReactivePropertySlim<short>(0);
+            RawSignalStrengthInDBm.AddTo(Disposables);
+
         }
 
 
-        public void Update(bool force = false)
+        public bool Update(bool force = false)
         {
+            bool updateList = false;
+
             if (device.CheckTimeout())
             {
                 // Device情報の無効判定時間が経過していたら
+                if (IsActive.Value)
+                {
+                    updateList = true;
+                }
                 IsActive.Value = false;
             }
             else
             {
                 // 一応有効化する
+                if (!IsActive.Value)
+                {
+                    updateList = true;
+                }
                 IsActive.Value = true;
                 // BLE.Deviceが更新されていたら反映する
-                if (force || timestamp != device.Timestamp)
+                if (force || timestamp < device.Timestamp)
                 {
                     timestamp = device.Timestamp;
                     DeviceId.Value = device.DeviceId;
                     BluetoothDeviceId.Value = device.BluetoothDeviceId;
+                    LocalName.Value = device.LocalName;
+                    RawSignalStrengthInDBm.Value = device.RawSignalStrengthInDBm;
                 }
             }
 
+            return updateList;
         }
 
 
