@@ -67,6 +67,12 @@ namespace bleus.BleViewModel
                 // BLE.Deviceが更新されていたら反映する
                 if (force || timestamp < device.Timestamp)
                 {
+                    //
+                    if (RawSignalStrengthInDBm.Value != device.RawSignalStrengthInDBm)
+                    {
+                        updateList = true;
+                    }
+                    //
                     timestamp = device.Timestamp;
                     DeviceId.Value = device.DeviceId;
                     BluetoothDeviceId.Value = device.BluetoothDeviceId;

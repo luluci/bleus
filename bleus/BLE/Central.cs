@@ -49,6 +49,13 @@ namespace bleus.BLE
             advertisementWatcher.Stop();
         }
 
+        public static void ResetDevices()
+        {
+            // Devices情報をクリア
+            DevicesMap.Clear();
+            Devices.Clear();
+        }
+
         static async void AdvertisementWatcher_Received(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
         {
             // lock内でawaitできないので外で実行、排他制御的には特に問題ない

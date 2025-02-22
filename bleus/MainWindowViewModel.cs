@@ -21,6 +21,9 @@ namespace bleus
         public ReactiveCollection<BleViewModel.Device> Devices { get; }
         ListCollectionView deviceCV;
 
+        // ScanFilter情報
+        public ReactivePropertySlim<int> FilterRssi { get; set; }
+
         //
         System.Windows.Threading.DispatcherTimer cycleTimer;
 
@@ -29,13 +32,24 @@ namespace bleus
         {
             //
             Devices = new ReactiveCollection<BleViewModel.Device>();
+            //
+            FilterRssi = new ReactivePropertySlim<int>(-50);
             //Devices.Add(new BLE.Device(1));
             var cv = CollectionViewSource.GetDefaultView(Devices);
             cv.Filter = x =>
             {
                 if (x is BleViewModel.Device dev)
                 {
-                    return dev.IsActive.Value;
+                    bool check = true;
+                    if (!dev.IsActive.Value)
+                    {
+                        check = false;
+                    }
+                    if (dev.RawSignalStrengthInDBm.Value < FilterRssi.Value)
+                    {
+                        check = false;
+                    }
+                    return check;
                 }
                 return false;
             };
@@ -44,6 +58,10 @@ namespace bleus
                 lcv.IsLiveFiltering = true;
                 deviceCV = lcv;
             }
+            FilterRssi.Subscribe(x => {
+                deviceCV.Refresh();
+            })
+            .AddTo(Disposables);
 
             //
             OnScan = new ReactiveCommand();
@@ -51,6 +69,10 @@ namespace bleus
             {
                 if (!IsScanning.Value)
                 {
+                    // 取得済みDevicesをクリアしてからスキャン開始
+                    BLE.Central.ResetDevices();
+                    Devices.Clear();
+                    //
                     BLE.Central.StartScan();
                     IsScanning.Value = true;
                 }
