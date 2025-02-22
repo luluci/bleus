@@ -95,7 +95,7 @@
                 <GroupBox Header="Filter:" Margin="0,0,0,0">
                     <StackPanel Orientation="Horizontal">
                         <Label Content="RSSI"/>
-                        <TextBox Width="50" Text="{Binding FilterRssi.Value}" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"/>
+                        <TextBox MouseWheel="TextBox_MouseWheel" Width="50" Text="{Binding FilterRssi.Value}" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"/>
                         <ScrollBar Height="27" Value="{Binding FilterRssi.Value}" SmallChange="1" LargeChange="1" Minimum="-100" Maximum="0" RenderTransformOrigin="0.5,0.5">
                             <ScrollBar.RenderTransform>
                                 <TransformGroup>

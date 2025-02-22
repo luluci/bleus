@@ -33,5 +33,24 @@ namespace bleus
         {
             vm.OnLoad();
         }
+
+        private void TextBox_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                if (tb.DataContext is MainWindowViewModel vm)
+                {
+                    if (e.Delta > 0)
+                    {
+                        vm.FilterRssi.Value++;
+                    }
+                    else
+                    {
+                        vm.FilterRssi.Value--;
+                    }
+                }
+
+            }
+        }
     }
 }
