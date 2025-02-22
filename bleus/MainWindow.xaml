@@ -47,7 +47,7 @@
                                     <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{Binding LocalName.Value}" FontWeight="Bold" Margin="0,0,10,0" />
-                                <Button Grid.Column="1" Width="50" Content="Test" />
+                                <Button Grid.Column="1" Width="50" Content="Connect" Command="{Binding OnConnect}" />
                             </Grid>
                             <TextBlock TextWrapping="Wrap">
                                 <TextBlock.Inlines>
@@ -109,11 +109,74 @@
         </Grid>
         
         <Grid Grid.Row="1">
-            <ListBox Margin="10,5,10,5" Style="{StaticResource ListBoxStyle_BLEDevices}" ItemsSource="{Binding Devices}"></ListBox>
+            <ListBox Margin="10,5,10,5" Style="{StaticResource ListBoxStyle_BLEDevices}" ItemsSource="{Binding Devices}" SelectedValue="{Binding DevicesSelectItem.Value}" IsSynchronizedWithCurrentItem="True"></ListBox>
         </Grid>
 
         <Grid Grid.Row="3">
-            <Label Content="device info" Width="100"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <TextBlock Text="{Binding Devices/LocalName.Value}" Margin="10,0,10,0" FontWeight="Bold" TextDecorations="Underline"/>
+                <TextBlock Text="{Binding Devices/PairingStatusDisp.Value}"/>
+            </StackPanel>
+            <ScrollViewer Grid.Row="1" Background="Aqua" >
+                <StackPanel Orientation="Vertical" >
+                    <ContentControl>
+                        <ContentControl.Style>
+                            <Style TargetType="{x:Type ContentControl}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Devices/HasSerialTx.Value}" Value="true">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <TextBlock Text="true!"/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Devices/HasSerialTx.Value}" Value="false">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <TextBlock Text="false!"/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                    <ContentControl>
+                        <ContentControl.Style>
+                            <Style TargetType="{x:Type ContentControl}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Devices/HasSerialRx.Value}" Value="true">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <TextBlock Text="true!"/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Devices/HasSerialRx.Value}" Value="false">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate>
+                                                    <TextBlock Text="false!"/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </Window>

@@ -1,4 +1,5 @@
-﻿using Reactive.Bindings;
+﻿using bleus.BLE;
+using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace bleus.BleViewModel
 {
@@ -18,10 +20,20 @@ namespace bleus.BleViewModel
         DateTimeOffset timestamp;
         //
         public ReactivePropertySlim<bool> IsActive { get; set; }
+        public ReactivePropertySlim<BLE.PairingStatus> PairingStatus { get; set; }
+        public ReactivePropertySlim<string> PairingStatusDisp { get; set; }
+        public ReactiveCommand OnConnect { get; set; }
+
+        // Charactaristic
+        public ReactivePropertySlim<bool> HasSerialTx { get; set; }
+        public ReactivePropertySlim<bool> HasSerialRx { get; set; }
+
+        // BLE情報
         public ReactivePropertySlim<string> DeviceId { get; set; }
         public ReactivePropertySlim<string> BluetoothDeviceId { get; set; }
         public ReactivePropertySlim<string> LocalName { get; set; }
         public ReactivePropertySlim<short> RawSignalStrengthInDBm { get; set; }
+
 
         public Device(BLE.Device dev)
         {
@@ -31,6 +43,31 @@ namespace bleus.BleViewModel
             //
             IsActive = new ReactivePropertySlim<bool>(true);
             IsActive.AddTo(Disposables);
+            PairingStatusDisp = new ReactivePropertySlim<string>("<Disconnect>");
+            PairingStatusDisp.Subscribe(x =>
+            {
+
+            })
+            .AddTo(Disposables);
+            PairingStatus = new ReactivePropertySlim<BLE.PairingStatus>(BLE.PairingStatus.Disconnected);
+            PairingStatus.Subscribe(x =>
+            {
+                switch (x)
+                {
+                    case BLE.PairingStatus.Connected:
+                        PairingStatusDisp.Value = "<Connected>";
+                        break;
+                    case BLE.PairingStatus.Bonded:
+                        PairingStatusDisp.Value = "<Bonded>";
+                        break;
+                    case BLE.PairingStatus.Disconnected:
+                    default:
+                        PairingStatusDisp.Value = "<Disconnect>";
+                        break;
+                }
+            })
+            .AddTo(Disposables);
+            //
             DeviceId = new ReactivePropertySlim<string>("<None>");
             DeviceId.AddTo(Disposables);
             BluetoothDeviceId = new ReactivePropertySlim<string>("<None>");
@@ -40,6 +77,28 @@ namespace bleus.BleViewModel
             RawSignalStrengthInDBm = new ReactivePropertySlim<short>(0);
             RawSignalStrengthInDBm.AddTo(Disposables);
 
+            //
+            HasSerialTx = new ReactivePropertySlim<bool>(true);
+            HasSerialTx.AddTo(Disposables);
+            HasSerialRx = new ReactivePropertySlim<bool>(false);
+            HasSerialRx.AddTo(Disposables);
+            OnConnect = new ReactiveCommand();
+            OnConnect.Subscribe(x =>
+            {
+                if (PairingStatus.Value == BLE.PairingStatus.Disconnected)
+                {
+                    PairingStatus.Value = BLE.PairingStatus.Connected;
+                    HasSerialTx.Value = false;
+                    HasSerialRx.Value = true;
+                }
+                else
+                {
+                    PairingStatus.Value = BLE.PairingStatus.Disconnected;
+                    HasSerialTx.Value = true;
+                    HasSerialRx.Value = false;
+                }
+            })
+            .AddTo(Disposables);
         }
 
 

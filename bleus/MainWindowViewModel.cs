@@ -1,4 +1,5 @@
 ﻿using bleus.BLE;
+using bleus.BleViewModel;
 using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using System;
@@ -20,18 +21,30 @@ namespace bleus
         // BLE
         public ReactiveCollection<BleViewModel.Device> Devices { get; }
         ListCollectionView deviceCV;
+        public ReactivePropertySlim<BleViewModel.Device> DevicesSelectItem { get; set; }
 
         // ScanFilter情報
         public ReactivePropertySlim<int> FilterRssi { get; set; }
 
         //
         System.Windows.Threading.DispatcherTimer cycleTimer;
+        int waitScanning;
 
 
         public MainWindowViewModel()
         {
             //
             Devices = new ReactiveCollection<BleViewModel.Device>();
+            Devices.AddTo(Disposables);
+            DevicesSelectItem = new ReactivePropertySlim<BleViewModel.Device>(null);
+            DevicesSelectItem.Subscribe(x =>
+            {
+                if (!(x is null))
+                {
+
+                }
+            })
+            .AddTo(Disposables);
             //
             FilterRssi = new ReactivePropertySlim<int>(-50);
             //Devices.Add(new BLE.Device(1));
@@ -73,6 +86,7 @@ namespace bleus
                     BLE.Central.ResetDevices();
                     Devices.Clear();
                     //
+                    waitScanning = 0;
                     BLE.Central.StartScan();
                     IsScanning.Value = true;
                 }
@@ -103,46 +117,52 @@ namespace bleus
             // Deviceスキャン中の処理
             if (IsScanning.Value)
             {
-                bool lockTaken = false;
-                try
+                waitScanning++;
+                if (waitScanning > 5)
                 {
-                    // GUIスレッドではロックでブロックせず次回更新タイミングに任せる
-                    Monitor.TryEnter(BLE.Central.lockDevices, 0, ref lockTaken);
-                    if (lockTaken)
+                    waitScanning = 0;
+                    bool lockTaken = false;
+                    try
                     {
-                        // 新規Deviceチェック
-                        if (BLE.Central.Devices.Count > Devices.Count)
+                        // GUIスレッドではロックでブロックせず次回更新タイミングに任せる
+                        Monitor.TryEnter(BLE.Central.lockDevices, 0, ref lockTaken);
+                        if (lockTaken)
                         {
-                            for (int i = Devices.Count; i < BLE.Central.Devices.Count; i++)
+                            // 新規Deviceチェック
+                            if (BLE.Central.Devices.Count > Devices.Count)
                             {
-                                var dev = new BleViewModel.Device(BLE.Central.Devices[i]);
-                                dev.Update(true);
-                                Devices.Add(dev);
+                                for (int i = Devices.Count; i < BLE.Central.Devices.Count; i++)
+                                {
+                                    var dev = new BleViewModel.Device(BLE.Central.Devices[i]);
+                                    dev.Update(true);
+                                    Devices.Add(dev);
+                                }
+                            }
+                            // 既存Device情報チェック
+                            // List表示情報に変更があるかチェックする
+                            bool updateList = false;
+                            foreach (var device in Devices)
+                            {
+                                if (device.Update())
+                                {
+                                    updateList = true;
+                                }
+                            }
+                            if (updateList)
+                            {
+                                deviceCV.Refresh();
                             }
                         }
-                        // 既存Device情報チェック
-                        // List表示情報に変更があるかチェックする
-                        bool updateList = false;
-                        foreach (var device in Devices)
+                    }
+                    finally
+                    {
+                        if (lockTaken)
                         {
-                            if (device.Update())
-                            {
-                                updateList = true;
-                            }
-                        }
-                        if (updateList)
-                        {
-                            deviceCV.Refresh();
+                            Monitor.Exit(BLE.Central.lockDevices);
                         }
                     }
                 }
-                finally
-                {
-                    if (lockTaken)
-                    {
-                        Monitor.Exit(BLE.Central.lockDevices);
-                    }
-                }
+
             }
 
         }

@@ -12,6 +12,13 @@ using Windows.Devices.Bluetooth.GenericAttributeProfile;
 
 namespace bleus.BLE
 {
+    enum PairingStatus
+    {
+        Disconnected,   // 未接続
+        Connected,  // 接続
+        Bonded, // 
+    }
+
     // BLE Client実装
     internal static class Central
     {
