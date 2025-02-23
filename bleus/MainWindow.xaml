@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:bleus"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance local:MainWindowViewModel}"
-        Title="MainWindow" Height="356" Width="597" Loaded="Window_Loaded">
+        Title="MainWindow" Height="401" Width="597" Loaded="Window_Loaded">
     <Window.Resources>
 
         <Style TargetType="{x:Type Label}" x:Key="LabelStyle_FlagDisp">
@@ -47,7 +47,7 @@
                                     <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{Binding LocalName.Value}" FontWeight="Bold" Margin="0,0,10,0" />
-                                <Button Grid.Column="1" Width="50" Content="Connect" Command="{Binding OnConnect}" />
+                                <Button Grid.Column="1" Width="50" Content="{Binding OnConnectDisp.Value}" Command="{Binding OnConnect}" />
                             </Grid>
                             <TextBlock TextWrapping="Wrap">
                                 <TextBlock.Inlines>
@@ -72,7 +72,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*"/>
             <RowDefinition Height="3"/>
-            <RowDefinition Height="150"/>
+            <RowDefinition Height="180"/>
         </Grid.RowDefinitions>
         <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" Background="DarkGray" />
 
@@ -121,22 +121,23 @@
                 <TextBlock Text="{Binding Devices/LocalName.Value}" Margin="10,0,10,0" FontWeight="Bold" TextDecorations="Underline"/>
                 <TextBlock Text="{Binding Devices/PairingStatusDisp.Value}"/>
             </StackPanel>
-            <ScrollViewer Grid.Row="1" Background="Aqua" >
+            <ScrollViewer Grid.Row="1">
                 <StackPanel Orientation="Vertical" >
                     <ContentControl>
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Devices/HasSerialTx.Value}" Value="true">
+                                    <DataTrigger Binding="{Binding Devices/HasSerialService.Value}" Value="true">
                                         <Setter Property="Template">
                                             <Setter.Value>
+                                                <!-- SerialService GUI -->
                                                 <ControlTemplate>
                                                     <TextBlock Text="true!"/>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding Devices/HasSerialTx.Value}" Value="false">
+                                    <DataTrigger Binding="{Binding Devices/HasM5PaperS3Service.Value}" Value="false">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate>

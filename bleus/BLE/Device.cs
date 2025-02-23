@@ -18,7 +18,7 @@ namespace bleus.BLE
         public DateTimeOffset Timestamp { get; set; }
         //
         ulong bluetoothAddress;
-        BluetoothLEDevice device;
+        public BluetoothLEDevice device;
         public string LocalName { get; set; }
         public short RawSignalStrengthInDBm { get; set; }
 

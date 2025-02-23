@@ -82,9 +82,11 @@ namespace bleus
             {
                 if (!IsScanning.Value)
                 {
+                    // Connect中のデバイスも消してしまうので一旦無効化
+                    // そもそも1:Nで制御するものでもないので、ペアリングと同時にスキャンは止めるべき？
                     // 取得済みDevicesをクリアしてからスキャン開始
-                    BLE.Central.ResetDevices();
-                    Devices.Clear();
+                    //BLE.Central.ResetDevices();
+                    //Devices.Clear();
                     //
                     waitScanning = 0;
                     BLE.Central.StartScan();
@@ -115,6 +117,7 @@ namespace bleus
         private void CycleTimerHandler(object sender, EventArgs e)
         {
             // Deviceスキャン中の処理
+            // PeripheralはペアリングするとAdvertisingを止める点に注意
             if (IsScanning.Value)
             {
                 waitScanning++;

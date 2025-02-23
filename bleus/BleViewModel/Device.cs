@@ -5,9 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace bleus.BleViewModel
@@ -22,21 +24,28 @@ namespace bleus.BleViewModel
         public ReactivePropertySlim<bool> IsActive { get; set; }
         public ReactivePropertySlim<BLE.PairingStatus> PairingStatus { get; set; }
         public ReactivePropertySlim<string> PairingStatusDisp { get; set; }
-        public ReactiveCommand OnConnect { get; set; }
+        public AsyncReactiveCommand OnConnect { get; set; }
+        public ReactivePropertySlim<string> OnConnectDisp { get; set; }
 
-        // Charactaristic
-        public ReactivePropertySlim<bool> HasSerialTx { get; set; }
-        public ReactivePropertySlim<bool> HasSerialRx { get; set; }
-
-        // BLE情報
+        // BLE Device情報
         public ReactivePropertySlim<string> DeviceId { get; set; }
         public ReactivePropertySlim<string> BluetoothDeviceId { get; set; }
         public ReactivePropertySlim<string> LocalName { get; set; }
         public ReactivePropertySlim<short> RawSignalStrengthInDBm { get; set; }
 
+        // BLE Service情報
+        public ReactivePropertySlim<bool> HasM5PaperS3Service { get; set; }
+        public M5PaperS3Service M5PaperS3Service { get; set; }
+        public ReactivePropertySlim<bool> HasSerialService { get; set; }
+        public SerialService SerialService { get; set; }
+
+        //
+        public ReactivePropertySlim<string> ErrMsg { get; set; }
 
         public Device(BLE.Device dev)
         {
+            //
+            ErrMsg = new ReactivePropertySlim<string>();
             //
             device = dev;
             timestamp = device.Timestamp;
@@ -78,24 +87,37 @@ namespace bleus.BleViewModel
             RawSignalStrengthInDBm.AddTo(Disposables);
 
             //
-            HasSerialTx = new ReactivePropertySlim<bool>(true);
-            HasSerialTx.AddTo(Disposables);
-            HasSerialRx = new ReactivePropertySlim<bool>(false);
-            HasSerialRx.AddTo(Disposables);
-            OnConnect = new ReactiveCommand();
-            OnConnect.Subscribe(x =>
+            HasM5PaperS3Service = new ReactivePropertySlim<bool>(false);
+            HasM5PaperS3Service.AddTo(Disposables);
+            M5PaperS3Service = null;
+            HasSerialService = new ReactivePropertySlim<bool>(false);
+            HasSerialService.AddTo(Disposables);
+            SerialService = null;
+            //
+            OnConnectDisp = new ReactivePropertySlim<string>("Connect");
+            OnConnectDisp.AddTo(Disposables);
+            OnConnect = new AsyncReactiveCommand();
+            OnConnect.Subscribe(async x =>
             {
-                if (PairingStatus.Value == BLE.PairingStatus.Disconnected)
+                try
                 {
-                    PairingStatus.Value = BLE.PairingStatus.Connected;
-                    HasSerialTx.Value = false;
-                    HasSerialRx.Value = true;
+                    if (PairingStatus.Value == BLE.PairingStatus.Disconnected)
+                    {
+                        PairingStatus.Value = BLE.PairingStatus.Connected;
+                        OnConnectDisp.Value = "Disconnect";
+                        await OnConnectImpl();
+                    }
+                    else
+                    {
+                        // no impl
+                        //PairingStatus.Value = BLE.PairingStatus.Disconnected;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
+                    ErrMsg.Value = ex.Message;
                     PairingStatus.Value = BLE.PairingStatus.Disconnected;
-                    HasSerialTx.Value = true;
-                    HasSerialRx.Value = false;
+                    OnConnectDisp.Value = "Connect";
                 }
             })
             .AddTo(Disposables);
@@ -106,7 +128,8 @@ namespace bleus.BleViewModel
         {
             bool updateList = false;
 
-            if (device.CheckTimeout())
+            // 未接続かつ一定時間Advertising受信無しは非アクティブにする
+            if (PairingStatus.Value == BLE.PairingStatus.Disconnected && device.CheckTimeout())
             {
                 // Device情報の無効判定時間が経過していたら
                 if (IsActive.Value)
@@ -139,9 +162,38 @@ namespace bleus.BleViewModel
                     RawSignalStrengthInDBm.Value = device.RawSignalStrengthInDBm;
                 }
             }
-
             return updateList;
         }
+
+        private async Task OnConnectImpl()
+        {
+            GattDeviceService service;
+
+            // Serviceを取得して接続開始
+            // SerialService設定
+            service = await BLE.Central.GetGattService(device, SerialService.ServiceGuid);
+            if (!(service is null))
+            {
+                // Service作成
+                this.SerialService = new SerialService();
+                // Service初期化
+                if (await this.SerialService.Setup(service))
+                {
+                    HasSerialService.Value = true;
+                }
+                else
+                {
+                    if (this.SerialService is IDisposable obj)
+                    {
+                        obj.Dispose();
+                    }
+                    this.SerialService = null;
+                    service.Dispose();
+                    service = null;
+                }
+            }
+        }
+
 
 
         #region IDisposable Support
