@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Reactive.Bindings;
+using Reactive.Bindings.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
@@ -12,18 +15,34 @@ namespace bleus.BleViewModel
     {
 
         // BLE対応Service
-        public readonly Guid ServiceGuid = new Guid("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+        public static readonly Guid ServiceGuid = new Guid("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
         // Peripheral側がRx
-        public readonly Guid CharacteristicGuidSerialRx = new Guid("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+        public static readonly Guid CharacteristicGuidSerialRx = new Guid("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
         // Peripheral側がTx(Notify)
-        public readonly Guid CharacteristicGuidSerialTx = new Guid("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+        public static readonly Guid CharacteristicGuidSerialTx = new Guid("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
 
         GattDeviceService service;
         GattCharacteristic characteristicRx;
         GattCharacteristic characteristicTx;
 
+        //
+        public ReactivePropertySlim<string> SendData { get; set; }
+        public AsyncReactiveCommand OnSend { get; set; }
+
         public SerialService()
         {
+            SendData = new ReactivePropertySlim<string>("test");
+            SendData.AddTo(Disposables);
+            OnSend = new AsyncReactiveCommand();
+            OnSend.Subscribe(async x => {
+                if (!(characteristicRx is null))
+                {
+                    var encoding = Encoding.GetEncoding("UTF-8");
+                    var data = encoding.GetBytes(SendData.Value);
+                    await characteristicRx.WriteValueAsync(data.AsBuffer());
+                }
+            })
+            .AddTo(Disposables);
         }
 
         public async Task<bool> Setup(GattDeviceService service_)

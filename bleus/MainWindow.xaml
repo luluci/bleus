@@ -132,16 +132,30 @@
                                             <Setter.Value>
                                                 <!-- SerialService GUI -->
                                                 <ControlTemplate>
-                                                    <TextBlock Text="true!"/>
+                                                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                        <TextBlock Text="Serial Service"/>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Send"/>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBox Width="200" Text="{Binding Devices/SerialService.SendData.Value}"/>
+                                                                <Button Content="Send" Command="{Binding Devices/SerialService.OnSend}"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Recv"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding Devices/HasM5PaperS3Service.Value}" Value="false">
+                                    <DataTrigger Binding="{Binding Devices/HasM5PaperS3Service.Value}" Value="true">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate>
-                                                    <TextBlock Text="false!"/>
+                                                    <StackPanel ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                        <TextBlock Text="M5StackPaperS3 Service"/>
+                                                    </StackPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>

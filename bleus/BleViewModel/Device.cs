@@ -37,7 +37,7 @@ namespace bleus.BleViewModel
         public ReactivePropertySlim<bool> HasM5PaperS3Service { get; set; }
         public M5PaperS3Service M5PaperS3Service { get; set; }
         public ReactivePropertySlim<bool> HasSerialService { get; set; }
-        public SerialService SerialService { get; set; }
+        public BleViewModel.SerialService SerialService { get; set; }
 
         //
         public ReactivePropertySlim<string> ErrMsg { get; set; }
@@ -171,7 +171,7 @@ namespace bleus.BleViewModel
 
             // Serviceを取得して接続開始
             // SerialService設定
-            service = await BLE.Central.GetGattService(device, SerialService.ServiceGuid);
+            service = await BLE.Central.GetGattService(device, BleViewModel.SerialService.ServiceGuid);
             if (!(service is null))
             {
                 // Service作成
