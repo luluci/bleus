@@ -142,19 +142,9 @@
                                                             </StackPanel>
                                                         </StackPanel>
                                                         <StackPanel>
-                                                            <TextBlock Text="Recv"/>
+                                                            <TextBlock Text="Recv:"/>
+                                                            <TextBlock Text="{Binding Devices/SerialService.RecvData.Value}"/>
                                                         </StackPanel>
-                                                    </StackPanel>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Devices/HasM5PaperS3Service.Value}" Value="true">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate>
-                                                    <StackPanel ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                                        <TextBlock Text="M5StackPaperS3 Service"/>
                                                     </StackPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>
@@ -168,20 +158,13 @@
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Devices/HasSerialRx.Value}" Value="true">
+                                    <DataTrigger Binding="{Binding Devices/HasM5PaperS3Service.Value}" Value="true">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate>
-                                                    <TextBlock Text="true!"/>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Devices/HasSerialRx.Value}" Value="false">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate>
-                                                    <TextBlock Text="false!"/>
+                                                    <StackPanel ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                        <TextBlock Text="M5StackPaperS3 Service"/>
+                                                    </StackPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>
                                         </Setter>

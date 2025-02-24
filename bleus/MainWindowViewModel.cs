@@ -116,14 +116,17 @@ namespace bleus
 
         private void CycleTimerHandler(object sender, EventArgs e)
         {
-            // Deviceスキャン中の処理
-            // PeripheralはペアリングするとAdvertisingを止める点に注意
-            if (IsScanning.Value)
+            // polling周期作成
+            // 処理内容ごとに周期を変える想定
+            waitScanning++;
+            if (waitScanning >= 5)
             {
-                waitScanning++;
-                if (waitScanning > 5)
+                waitScanning = 0;
+
+                // Deviceスキャン中の処理
+                // PeripheralはペアリングするとAdvertisingを止める点に注意
+                if (IsScanning.Value)
                 {
-                    waitScanning = 0;
                     bool lockTaken = false;
                     try
                     {
@@ -141,20 +144,6 @@ namespace bleus
                                     Devices.Add(dev);
                                 }
                             }
-                            // 既存Device情報チェック
-                            // List表示情報に変更があるかチェックする
-                            bool updateList = false;
-                            foreach (var device in Devices)
-                            {
-                                if (device.Update())
-                                {
-                                    updateList = true;
-                                }
-                            }
-                            if (updateList)
-                            {
-                                deviceCV.Refresh();
-                            }
                         }
                     }
                     finally
@@ -166,8 +155,23 @@ namespace bleus
                     }
                 }
 
+                // 既存Device情報更新チェック
+                // Scan中はdevice情報が更新される
+                // Connect中は通信データが更新される
+                // List表示情報に変更があるかチェックする
+                bool updateList = false;
+                foreach (var device in Devices)
+                {
+                    if (device.Update())
+                    {
+                        updateList = true;
+                    }
+                }
+                if (updateList)
+                {
+                    deviceCV.Refresh();
+                }
             }
-
         }
 
 

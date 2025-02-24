@@ -20,7 +20,10 @@ namespace bleus.BleViewModel
         BLE.Device device;
         // Device情報前回取得時間
         DateTimeOffset timestamp;
-        //
+        // BLE
+        GattDeviceService service;
+        bool isDisconnected = false;
+
         public ReactivePropertySlim<bool> IsActive { get; set; }
         public ReactivePropertySlim<BLE.PairingStatus> PairingStatus { get; set; }
         public ReactivePropertySlim<string> PairingStatusDisp { get; set; }
@@ -49,6 +52,7 @@ namespace bleus.BleViewModel
             //
             device = dev;
             timestamp = device.Timestamp;
+            device.device.ConnectionStatusChanged += ConnectionStatusChanged;
             //
             IsActive = new ReactivePropertySlim<bool>(true);
             IsActive.AddTo(Disposables);
@@ -105,16 +109,18 @@ namespace bleus.BleViewModel
                     {
                         PairingStatus.Value = BLE.PairingStatus.Connected;
                         OnConnectDisp.Value = "Disconnect";
-                        await OnConnectImpl();
+                        await StartConnect();
                     }
                     else
                     {
-                        // no impl
-                        //PairingStatus.Value = BLE.PairingStatus.Disconnected;
+                        PairingStatus.Value = BLE.PairingStatus.Disconnected;
+                        OnConnectDisp.Value = "Connect";
+                        StartDisconnect();
                     }
                 }
                 catch (Exception ex)
                 {
+                    StartDisconnect();
                     ErrMsg.Value = ex.Message;
                     PairingStatus.Value = BLE.PairingStatus.Disconnected;
                     OnConnectDisp.Value = "Connect";
@@ -127,6 +133,20 @@ namespace bleus.BleViewModel
         public bool Update(bool force = false)
         {
             bool updateList = false;
+
+            // 接続状況チェック
+            // 切断後に勝手に再接続して再切断はありえないので
+            // フラグ参照に排他制御は不要
+            if (isDisconnected)
+            {
+                isDisconnected = false;
+                // Deviceを削除する必要がある？
+
+                //
+                StartDisconnect();
+
+                return true;
+            }
 
             // 未接続かつ一定時間Advertising受信無しは非アクティブにする
             if (PairingStatus.Value == BLE.PairingStatus.Disconnected && device.CheckTimeout())
@@ -161,14 +181,25 @@ namespace bleus.BleViewModel
                     LocalName.Value = device.LocalName;
                     RawSignalStrengthInDBm.Value = device.RawSignalStrengthInDBm;
                 }
+                // Serviceチェック
+                if (!(SerialService is null))
+                {
+                    SerialService.Update();
+                }
             }
             return updateList;
         }
 
-        private async Task OnConnectImpl()
+        private void ConnectionStatusChanged(BluetoothLEDevice sender, object e)
         {
-            GattDeviceService service;
+            if (sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected)
+            {
+                isDisconnected = true;
+            }
+        }
 
+        private async Task StartConnect()
+        {
             // Serviceを取得して接続開始
             // SerialService設定
             service = await BLE.Central.GetGattService(device, BleViewModel.SerialService.ServiceGuid);
@@ -183,14 +214,22 @@ namespace bleus.BleViewModel
                 }
                 else
                 {
-                    if (this.SerialService is IDisposable obj)
-                    {
-                        obj.Dispose();
-                    }
-                    this.SerialService = null;
-                    service.Dispose();
-                    service = null;
+                    StartDisconnect();
                 }
+            }
+        }
+        private void StartDisconnect()
+        {
+            if (!(service is null))
+            {
+                //
+                if (this.SerialService is IDisposable obj)
+                {
+                    obj.Dispose();
+                }
+                this.SerialService = null;
+                service.Dispose();
+                service = null;
             }
         }
 
@@ -212,6 +251,8 @@ namespace bleus.BleViewModel
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
                 // TODO: 大きなフィールドを null に設定します。
+                device.device.ConnectionStatusChanged -= ConnectionStatusChanged;
+                StartDisconnect();
 
                 disposedValue = true;
             }
