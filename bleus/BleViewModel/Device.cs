@@ -222,6 +222,7 @@ namespace bleus.BleViewModel
         {
             if (!(service is null))
             {
+                HasSerialService.Value = false;
                 //
                 if (this.SerialService is IDisposable obj)
                 {
