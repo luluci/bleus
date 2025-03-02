@@ -49,6 +49,40 @@ namespace bleus.BLE
             }
         }
 
+        public void Disconnect()
+        {
+            // 切断処理
+            // deviceを削除することで切断される？
+            if (!(device is null))
+            {
+                device.Dispose();
+                device = null;
+            }
+        }
+        public async Task<bool> Connect()
+        {
+            bool result = false;
+            // 接続処理
+            // disconnectで切断した後の再接続処理
+            // AdvertisingからDeviceを取得したときはインスタンス取得済み
+            try
+            {
+                if (device is null)
+                {
+                    // タイムアウトは必要？
+                    device = await BluetoothLEDevice.FromBluetoothAddressAsync(bluetoothAddress);
+                }
+                result = true;
+            }
+            catch (Exception e)
+            {
+                // Console.WriteLine(e.Message);
+                // result = false;
+            }
+
+            return result;
+        }
+
         public bool CheckTimeout()
         {
             // 10秒取得できていないデバイスはタイムアウトと判定

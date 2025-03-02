@@ -23,6 +23,7 @@ namespace bleus.BleViewModel
         // BLE
         GattDeviceService service;
         bool isDisconnected = false;
+        bool hasConnected = false;
 
         public ReactivePropertySlim<bool> IsActive { get; set; }
         public ReactivePropertySlim<BLE.PairingStatus> PairingStatus { get; set; }
@@ -107,9 +108,12 @@ namespace bleus.BleViewModel
                 {
                     if (PairingStatus.Value == BLE.PairingStatus.Disconnected)
                     {
-                        PairingStatus.Value = BLE.PairingStatus.Connected;
-                        OnConnectDisp.Value = "Disconnect";
-                        await StartConnect();
+                        if (await StartConnect())
+                        {
+                            PairingStatus.Value = BLE.PairingStatus.Connected;
+                            OnConnectDisp.Value = "Disconnect";
+                            hasConnected = true;
+                        }
                     }
                     else
                     {
@@ -149,7 +153,7 @@ namespace bleus.BleViewModel
             }
 
             // 未接続かつ一定時間Advertising受信無しは非アクティブにする
-            if (PairingStatus.Value == BLE.PairingStatus.Disconnected && device.CheckTimeout())
+            if (!hasConnected && PairingStatus.Value == BLE.PairingStatus.Disconnected && device.CheckTimeout())
             {
                 // Device情報の無効判定時間が経過していたら
                 if (IsActive.Value)
@@ -198,10 +202,17 @@ namespace bleus.BleViewModel
             }
         }
 
-        private async Task StartConnect()
+        private async Task<bool> StartConnect()
         {
+            var result = await device.Connect();
+            if (!result)
+            {
+                return false;
+            }
+
             // Serviceを取得して接続開始
             // SerialService設定
+            result = false;
             service = await BLE.Central.GetGattService(device, BleViewModel.SerialService.ServiceGuid);
             if (!(service is null))
             {
@@ -211,12 +222,16 @@ namespace bleus.BleViewModel
                 if (await this.SerialService.Setup(service))
                 {
                     HasSerialService.Value = true;
-                }
-                else
-                {
-                    StartDisconnect();
+                    result = true;
                 }
             }
+
+            if (!result)
+            {
+                StartDisconnect();
+            }
+
+            return result;
         }
         private void StartDisconnect()
         {
@@ -231,6 +246,9 @@ namespace bleus.BleViewModel
                 this.SerialService = null;
                 service.Dispose();
                 service = null;
+
+                // 
+                device.Disconnect();
             }
         }
 
