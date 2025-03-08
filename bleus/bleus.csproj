@@ -56,7 +56,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BleViewModel\Device.cs" />
-    <Compile Include="BleViewModel\M5PaperS3Service.cs" />
+    <Compile Include="BleViewModel\DataTrans.cs" />
     <Compile Include="BleViewModel\SerialService.cs" />
     <Compile Include="Utility\BindableBase.cs" />
     <Page Include="MainWindow.xaml">
@@ -107,6 +107,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.SDK.Contracts">
       <Version>10.0.26100.1742</Version>
+    </PackageReference>
+    <PackageReference Include="Prism.Wpf">
+      <Version>9.0.537</Version>
     </PackageReference>
     <PackageReference Include="ReactiveProperty.WPF">
       <Version>9.7.0</Version>

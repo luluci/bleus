@@ -4,6 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:bleus"
+        xmlns:rp="clr-namespace:Reactive.Bindings.Interactivity;assembly=ReactiveProperty.WPF"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:prism="http://prismlibrary.com/"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance local:MainWindowViewModel}"
         Title="MainWindow" Height="401" Width="597" Loaded="Window_Loaded">
@@ -33,7 +36,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        
+
         <Style TargetType="{x:Type ListBox}" x:Key="ListBoxStyle_BLEDevices" BasedOn="{StaticResource {x:Type ListBox}}">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
@@ -51,7 +54,8 @@
                             </Grid>
                             <TextBlock TextWrapping="Wrap">
                                 <TextBlock.Inlines>
-                                    <Run Text="{Binding RawSignalStrengthInDBm.Value}"/><Run Text="dBm"/>
+                                    <Run Text="{Binding RawSignalStrengthInDBm.Value}"/>
+                                    <Run Text="dBm"/>
                                     <Run Text="{Binding DeviceId.Value}"/>
                                 </TextBlock.Inlines>
                             </TextBlock>
@@ -64,15 +68,14 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
-        
+
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="3"/>
             <RowDefinition Height="180"/>
+            <RowDefinition Height="3"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" Background="DarkGray" />
 
@@ -123,6 +126,46 @@
             </StackPanel>
             <ScrollViewer Grid.Row="1">
                 <StackPanel Orientation="Vertical" >
+
+                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="5,2,5,2">
+                        <TextBlock Text="test" TextDecorations="Underline" FontWeight="Bold"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="File" HorizontalAlignment="Center" />
+                            <TextBox Grid.Column="1" IsReadOnlyCaretVisible="True" IsReadOnly="True" Text="{Binding Debug.Value}" AllowDrop="True">
+                                <i:Interaction.Triggers>
+                                    <!--
+                                    <i:EventTrigger EventName="Drop">
+                                        <rp:EventToReactiveCommand Command="{Binding OnDebug2}" />
+                                    </i:EventTrigger>
+                                    -->
+                                    <i:EventTrigger EventName="PreviewDragOver">
+                                        <prism:InvokeCommandAction Command="{Binding PreviewDragOver}" />
+                                    </i:EventTrigger>
+                                    <i:EventTrigger EventName="PreviewDragLeave">
+                                        <prism:InvokeCommandAction Command="{Binding PreviewDragLeave}" />
+                                    </i:EventTrigger>
+                                    <i:EventTrigger EventName="PreviewDrop">
+                                        <rp:EventToReactiveCommand Command="{Binding PreviewDropFile}" />
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
+                            </TextBox>
+                            <Button Grid.Column="2" Content="Send" Command="{Binding OnDebug}" Margin="10,0,10,0"/>
+                        </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Status:" HorizontalAlignment="Center" />
+                            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" HorizontalAlignment="Left" />
+                        </Grid>
+                        <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
+                    </StackPanel>
                     <ContentControl>
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
@@ -132,8 +175,8 @@
                                             <Setter.Value>
                                                 <!-- SerialService GUI -->
                                                 <ControlTemplate>
-                                                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                                        <TextBlock Text="Serial Service"/>
+                                                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="5,2,5,2">
+                                                        <TextBlock Text="Serial Service" TextDecorations="Underline" FontWeight="Bold"/>
                                                         <StackPanel>
                                                             <TextBlock Text="Send"/>
                                                             <StackPanel Orientation="Horizontal">
@@ -145,6 +188,7 @@
                                                             <TextBlock Text="Recv:"/>
                                                             <TextBlock Text="{Binding Devices/SerialService.RecvData.Value}"/>
                                                         </StackPanel>
+                                                        <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
                                                     </StackPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>
@@ -158,12 +202,43 @@
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Devices/HasM5PaperS3Service.Value}" Value="true">
+                                    <DataTrigger Binding="{Binding Devices/HasDataTransService.Value}" Value="true">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate>
-                                                    <StackPanel ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                                        <TextBlock Text="M5StackPaperS3 Service"/>
+                                                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="5,2,5,2">
+                                                        <TextBlock Text="M5StackPaperS3 DataTrans Service" TextDecorations="Underline" FontWeight="Bold"/>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="80"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="File" HorizontalAlignment="Center" />
+                                                            <TextBox Grid.Column="1" IsReadOnlyCaretVisible="True" IsReadOnly="True" Text="{Binding Devices/DataTransService.SendFile.Value}" AllowDrop="True">
+                                                                <i:Interaction.Triggers>
+                                                                    <i:EventTrigger EventName="PreviewDragOver">
+                                                                        <prism:InvokeCommandAction Command="{Binding Devices/DataTransService.PreviewDragOver}" />
+                                                                    </i:EventTrigger>
+                                                                    <i:EventTrigger EventName="PreviewDragLeave">
+                                                                        <prism:InvokeCommandAction Command="{Binding Devices/DataTransService.PreviewDragLeave}" />
+                                                                    </i:EventTrigger>
+                                                                    <i:EventTrigger EventName="PreviewDrop">
+                                                                        <rp:EventToReactiveCommand Command="{Binding Devices/DataTransService.PreviewDropFile}" />
+                                                                    </i:EventTrigger>
+                                                                </i:Interaction.Triggers>
+                                                            </TextBox>
+                                                            <Button Grid.Column="2" Content="Send" Command="{Binding Devices/DataTransService.OnSendFile}" IsEnabled="{Binding Devices/DataTransService.IsOkSendFile.Value}" Margin="10,0,10,0"/>
+                                                        </Grid>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="Status:" HorizontalAlignment="Center" />
+                                                            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{Binding Devices/DataTransService.SendStatus.Value}" HorizontalAlignment="Left" />
+                                                        </Grid>
+                                                        <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
                                                     </StackPanel>
                                                 </ControlTemplate>
                                             </Setter.Value>

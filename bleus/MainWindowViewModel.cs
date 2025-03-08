@@ -31,8 +31,67 @@ namespace bleus
         int waitScanning;
 
 
+
+        //debug
+        public ReactivePropertySlim<string> Debug { get; set; }
+        public ReactiveCommand OnDebug { get; set; }
+        public ReactiveCommand<System.Windows.DragEventArgs> OnDebug2 { get; set; }
+        public ReactiveCommand<System.Windows.DragEventArgs> PreviewDragOver { get; set; }
+        public ReactiveCommand<System.Windows.DragEventArgs> PreviewDragLeave { get; set; }
+        public ReactiveCommand<System.Windows.DragEventArgs> PreviewDropFile { get; set; }
+        private void DoPreviewDragOver(System.Windows.DragEventArgs e)
+        {
+            // ファイルのD&Dのみ受付
+            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+            {
+                e.Handled = true;
+                e.Effects = System.Windows.DragDropEffects.Copy;
+            }
+        }
+        private void DoPreviewDragLeave(System.Windows.DragEventArgs e)
+        {
+            e.Effects = System.Windows.DragDropEffects.None;
+            e.Handled = false;
+        }
+        private void DoDropFile(System.Windows.DragEventArgs e)
+        {
+            // ファイルのD&Dのみ受付
+            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+            {
+                var dropFiles = e.Data.GetData(System.Windows.DataFormats.FileDrop);
+                if (dropFiles is string[] files)
+                {
+                    if (files.Length > 0)
+                    {
+                        var tgt = files[0];
+                        if (System.IO.File.Exists(tgt))
+                        {
+                            Debug.Value = tgt;
+                        }
+                        else
+                        {
+                            Debug.Value = "<ファイル以外がD&Dされました？>";
+                        }
+                    }
+                }
+
+                e.Handled = true;
+            }
+        }
+
+
+
+
         public MainWindowViewModel()
         {
+            Debug = new ReactivePropertySlim<string>(string.Empty);
+            OnDebug = new ReactiveCommand();
+            OnDebug2 = new ReactiveCommand<System.Windows.DragEventArgs>().WithSubscribe(DoDropFile);
+            PreviewDragOver = new ReactiveCommand<System.Windows.DragEventArgs>().WithSubscribe(DoPreviewDragOver);
+            PreviewDragLeave = new ReactiveCommand<System.Windows.DragEventArgs>().WithSubscribe(DoPreviewDragLeave);
+            PreviewDropFile = new ReactiveCommand<System.Windows.DragEventArgs>().WithSubscribe(DoDropFile);
+
+
             //
             Devices = new ReactiveCollection<BleViewModel.Device>();
             Devices.AddTo(Disposables);

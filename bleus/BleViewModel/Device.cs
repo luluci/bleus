@@ -3,6 +3,7 @@ using Reactive.Bindings;
 using Reactive.Bindings.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Security.Cryptography;
@@ -38,13 +39,14 @@ namespace bleus.BleViewModel
         public ReactivePropertySlim<short> RawSignalStrengthInDBm { get; set; }
 
         // BLE Service情報
-        public ReactivePropertySlim<bool> HasM5PaperS3Service { get; set; }
-        public M5PaperS3Service M5PaperS3Service { get; set; }
+        public ReactivePropertySlim<bool> HasDataTransService { get; set; }
+        public DataTrans DataTransService { get; set; }
         public ReactivePropertySlim<bool> HasSerialService { get; set; }
         public BleViewModel.SerialService SerialService { get; set; }
 
         //
         public ReactivePropertySlim<string> ErrMsg { get; set; }
+
 
         public Device(BLE.Device dev)
         {
@@ -92,9 +94,9 @@ namespace bleus.BleViewModel
             RawSignalStrengthInDBm.AddTo(Disposables);
 
             //
-            HasM5PaperS3Service = new ReactivePropertySlim<bool>(false);
-            HasM5PaperS3Service.AddTo(Disposables);
-            M5PaperS3Service = null;
+            HasDataTransService = new ReactivePropertySlim<bool>(false);
+            HasDataTransService.AddTo(Disposables);
+            DataTransService = null;
             HasSerialService = new ReactivePropertySlim<bool>(false);
             HasSerialService.AddTo(Disposables);
             SerialService = null;
@@ -225,6 +227,23 @@ namespace bleus.BleViewModel
                     result = true;
                 }
             }
+            // SerialServiceは失敗しても無視
+
+            // DataTransService設定
+            result = false;
+            service = await BLE.Central.GetGattService(device, BleViewModel.DataTrans.ServiceGuid);
+            if (!(service is null))
+            {
+                // Service作成
+                this.DataTransService = new DataTrans();
+                // Service初期化
+                if (await this.DataTransService.Setup(service))
+                {
+                    HasDataTransService.Value = true;
+                    result = true;
+                }
+            }
+
 
             if (!result)
             {

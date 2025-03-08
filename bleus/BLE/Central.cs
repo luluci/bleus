@@ -202,11 +202,14 @@ namespace bleus.BLE
             var result = await service.GetCharacteristicsForUuidAsync(guid);
             if (result.Status == GattCommunicationStatus.Success)
             {
-                var characteristics = result.Characteristics[0];
-                //GattCharacteristicProperties.Write
-                if (characteristics.CharacteristicProperties.HasFlag(prop))
+                if (result.Characteristics.Count > 0)
                 {
-                    return characteristics;
+                    var characteristics = result.Characteristics[0];
+                    //GattCharacteristicProperties.Write
+                    if (characteristics.CharacteristicProperties.HasFlag(prop))
+                    {
+                        return characteristics;
+                    }
                 }
             }
             return null;
