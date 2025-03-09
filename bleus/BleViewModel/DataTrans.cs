@@ -38,9 +38,9 @@ namespace bleus.BleViewModel
 
         System.IO.FileStream fs;
         UInt32 filesize;
-        UInt32 nextPage;    // 次回送信ページ番号, 0開始としている
+        public UInt32 NextPage;    // 次回送信ページ番号, 0開始としている
         UInt32 restSize;    // 残り送信サイズ
-        UInt32 maxPage;     // 最大ページ数=転送データ全体分割数
+        public UInt32 MaxPage;     // 最大ページ数=転送データ全体分割数
         UInt32 sendSize;      //送信ボディサイズ
 
         public DataTransPacketSend()
@@ -56,8 +56,8 @@ namespace bleus.BleViewModel
                 // ファイル情報取得
                 filesize = (UInt32)fs.Length;
                 restSize = filesize;
-                nextPage = 0;
-                maxPage = (UInt32)Math.Ceiling((double)filesize / ContentBodySize);
+                NextPage = 0;
+                MaxPage = (UInt32)Math.Ceiling((double)filesize / ContentBodySize);
                 sendSize = ContentBodySize;
 
                 //
@@ -96,7 +96,7 @@ namespace bleus.BleViewModel
 
             // Body
             BitConverter.GetBytes(filesize).CopyTo(DeclareData, 8);
-            BitConverter.GetBytes(maxPage).CopyTo(DeclareData, 12);
+            BitConverter.GetBytes(MaxPage).CopyTo(DeclareData, 12);
         }
         void InitContentData()
         {
@@ -126,24 +126,24 @@ namespace bleus.BleViewModel
 
             // 再送対応、する？
             // すでに送信データ作成済みか判定
-            if (currPage+1 == nextPage)
+            if (currPage+1 == NextPage)
             {
                 return true;
             }
             // 正常シーケンスではcurrPage==nextPageになる
             // 不一致のときはシーケンス異常
-            if (currPage != nextPage)
+            if (currPage != NextPage)
             {
                 return false;
             }
             // 最大ページ数を超えて通信完了しないのは異常
-            if (currPage >= maxPage)
+            if (currPage >= MaxPage)
             {
                 return false;
             }
 
             // ContentData更新
-            nextPage = currPage + 1;
+            NextPage = currPage + 1;
             // ボディサイズ
             if (restSize < ContentBodySize)
             {
@@ -155,7 +155,7 @@ namespace bleus.BleViewModel
             }
             ContentData[1] = (byte)sendSize;
             // 送信ページ番号:0開始
-            ContentData[3] = (byte)nextPage;
+            ContentData[3] = (byte)NextPage;
             // Body
             var readSize = fs.Read(ContentData, 8, (int)sendSize);
             restSize -= (UInt32)readSize;
@@ -230,6 +230,8 @@ namespace bleus.BleViewModel
 
         // 
         public static readonly int SendDelay = 10;  // msec
+        // ステータス表示
+        public static readonly int StatusDelayMax = (500) / SendDelay; // 500ms
         // タイムアウト判定
         // データ転送シーケンス全体タイムアウト
         public ReactivePropertySlim<int> TimeoutSeqMax { get; set; }
@@ -344,10 +346,6 @@ namespace bleus.BleViewModel
 
                     //await Task.Run(DoSendFileImpl, SendFileCancellationTokenSource.Token);
                     await DoSendFileImpl();
-
-                    // ファイル送信
-                    var tgt = SendFile.Value;
-                    Debug.WriteLine($"SendFile: {tgt}");
                 }
             }
             catch (Exception e)
@@ -384,6 +382,9 @@ namespace bleus.BleViewModel
 
             try
             {
+                // ステータス表示ウェイト
+                // データ送信中に毎回表示更新するとオーバーヘッドが大きそうなので(未確認)
+                int statusDelayCount = 0;
                 // シーケンスタイムアウト判定
                 timeoutSeqCount = 0;
 
@@ -402,11 +403,17 @@ namespace bleus.BleViewModel
                         SendStatus.Value = "Error: TimeoutSeq";
                         break;
                     }
+                    //
+                    statusDelayCount++;
+                    if (statusDelayCount > StatusDelayMax)
+                    {
+                        statusDelayCount = 0;
+                    }
 
                     if (stateTxRx)
                     {
                         // 送信処理
-                        await DoSendFileSend();
+                        await DoSendFileSend(statusDelayCount);
                         stateTxRx = false;
                         timeoutRecvCount = 0;
                     }
@@ -429,9 +436,11 @@ namespace bleus.BleViewModel
                                 stateTxRx = true;
                                 break;
                             case RecvAnalyzeResult.SendComplete:
+                                SendStatus.Value = "Complete: Data Send";
                                 isComplete = true;
                                 break;
                             case RecvAnalyzeResult.Cancel:
+                                SendStatus.Value = "Cancel: Data Send";
                                 isComplete = true;
                                 break;
                         }
@@ -447,7 +456,7 @@ namespace bleus.BleViewModel
                 packetSend.Close();
             }
         }
-        private async Task DoSendFileSend()
+        private async Task DoSendFileSend(int statusDelayCount)
         {
             switch (sendState)
             {
@@ -455,11 +464,17 @@ namespace bleus.BleViewModel
                     // Declare送信
                     await characteristicRx.WriteValueAsync(packetSend.DeclareData.AsBuffer());
                     sendState = SendState.SendContent;
+                    SendStatus.Value = "Start: Data Send";
                     break;
                 case SendState.SendContent:
                     // Content送信
                     // 送信バッファは応答解析時に更新する
                     await characteristicRx.WriteValueAsync(packetSend.ContentData.AsBuffer());
+                    //
+                    if (statusDelayCount == 0)
+                    {
+                        SendStatus.Value = $"Data Sending: {packetSend.NextPage}/{packetSend.MaxPage}";
+                    }
                     break;
             }
         }

@@ -30,6 +30,8 @@ namespace bleus.BLE
         public static Dictionary<ulong, Device> DevicesMap;
         public static readonly object lockDevices = new object();
         public static bool IsScanStopped;   //Stop() or エラーで停止した
+        //
+        public static string ErrMsg = string.Empty;
 
         static Central()
         {
@@ -182,35 +184,48 @@ namespace bleus.BLE
         }
         public static async Task<GattDeviceService> GetGattService(Device device, Guid guid)
         {
-            // DeviceからServiceを取得する
-            // Disconnectedのとき、ここでキャッシュされてないServiceを取得する可能性あり
-            // BLEテストツールでServiceをすべて取得するなら
-            // device.device.GetGattServicesAsync();
-            // 特定のServiceを実装するツールならGuidを指定する
-            var servresult = await device.device.GetGattServicesForUuidAsync(guid);
-            if (servresult.Status == GattCommunicationStatus.Success)
+            try
             {
-                return servresult.Services[0];
+                // DeviceからServiceを取得する
+                // Disconnectedのとき、ここでキャッシュされてないServiceを取得する可能性あり
+                // BLEテストツールでServiceをすべて取得するなら
+                // device.device.GetGattServicesAsync();
+                // 特定のServiceを実装するツールならGuidを指定する
+                var servresult = await device.device.GetGattServicesForUuidAsync(guid);
+                if (servresult.Status == GattCommunicationStatus.Success)
+                {
+                    return servresult.Services[0];
+                }
             }
-
+            catch (Exception ex)
+            {
+                ErrMsg = ex.Message;
+            }
             // 
             return null;
         }
 
         public static async Task<GattCharacteristic> GetCharacteristic(GattDeviceService service, Guid guid, GattCharacteristicProperties prop)
         {
-            var result = await service.GetCharacteristicsForUuidAsync(guid);
-            if (result.Status == GattCommunicationStatus.Success)
+            try
             {
-                if (result.Characteristics.Count > 0)
+                var result = await service.GetCharacteristicsForUuidAsync(guid);
+                if (result.Status == GattCommunicationStatus.Success)
                 {
-                    var characteristics = result.Characteristics[0];
-                    //GattCharacteristicProperties.Write
-                    if (characteristics.CharacteristicProperties.HasFlag(prop))
+                    if (result.Characteristics.Count > 0)
                     {
-                        return characteristics;
+                        var characteristics = result.Characteristics[0];
+                        //GattCharacteristicProperties.Write
+                        if (characteristics.CharacteristicProperties.HasFlag(prop))
+                        {
+                            return characteristics;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                ErrMsg = ex.Message;
             }
             return null;
 
