@@ -74,14 +74,14 @@ namespace bleus.BleViewModel
                 characteristicRx = null;
                 return false;
             }
-            characteristicTx.ValueChanged += CharacteristicRx_ValueChanged;
+            characteristicTx.ValueChanged += CharacteristicTx_ValueChanged;
             await characteristicTx.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
 
 
             return true;
         }
 
-        void CharacteristicRx_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs eventArgs)
+        void CharacteristicTx_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs eventArgs)
         {
             //Notifyによる受信時の処理
             byte[] data = new byte[eventArgs.CharacteristicValue.Length];
@@ -125,16 +125,25 @@ namespace bleus.BleViewModel
                 if (disposing)
                 {
                     // TODO: マネージド状態を破棄します (マネージド オブジェクト)。
+
+                    if (!(service is null))
+                    {
+                        if (!(characteristicTx is null))
+                        {
+                            characteristicTx.ValueChanged -= CharacteristicTx_ValueChanged;
+                        }
+                        characteristicTx = null;
+                        characteristicRx = null;
+
+                        service.Dispose();
+                        service = null;
+                    }
+
                     this.Disposables.Dispose();
                 }
 
                 // TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
                 // TODO: 大きなフィールドを null に設定します。
-                if (!(characteristicTx is null))
-                {
-                    characteristicTx.ValueChanged -= CharacteristicRx_ValueChanged;
-                }
-
                 disposedValue = true;
             }
         }

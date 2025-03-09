@@ -213,22 +213,6 @@ namespace bleus.BleViewModel
             }
 
             // Serviceを取得して接続開始
-            // SerialService設定
-            result = false;
-            service = await BLE.Central.GetGattService(device, BleViewModel.SerialService.ServiceGuid);
-            if (!(service is null))
-            {
-                // Service作成
-                this.SerialService = new SerialService();
-                // Service初期化
-                if (await this.SerialService.Setup(service))
-                {
-                    HasSerialService.Value = true;
-                    result = true;
-                }
-            }
-            // SerialServiceは失敗しても無視
-
             // DataTransService設定
             result = false;
             service = await BLE.Central.GetGattService(device, BleViewModel.DataTrans.ServiceGuid);
@@ -244,6 +228,21 @@ namespace bleus.BleViewModel
                 }
             }
 
+            // SerialService設定
+            //result = false;
+            service = await BLE.Central.GetGattService(device, BleViewModel.SerialService.ServiceGuid);
+            if (!(service is null))
+            {
+                // Service作成
+                this.SerialService = new SerialService();
+                // Service初期化
+                if (await this.SerialService.Setup(service))
+                {
+                    HasSerialService.Value = true;
+                    //result = true;
+                }
+            }
+            // SerialServiceは失敗しても無視
 
             if (!result)
             {
@@ -257,14 +256,18 @@ namespace bleus.BleViewModel
             if (!(service is null))
             {
                 HasSerialService.Value = false;
+                HasDataTransService.Value = false;
                 //
-                if (this.SerialService is IDisposable obj)
+                if (this.DataTransService is IDisposable obj1)
                 {
-                    obj.Dispose();
+                    obj1.Dispose();
+                }
+                this.DataTransService = null;
+                if (this.SerialService is IDisposable obj2)
+                {
+                    obj2.Dispose();
                 }
                 this.SerialService = null;
-                service.Dispose();
-                service = null;
 
                 // 
                 device.Disconnect();

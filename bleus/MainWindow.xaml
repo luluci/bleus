@@ -73,7 +73,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="180"/>
+            <RowDefinition Height="120"/>
             <RowDefinition Height="3"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -127,6 +127,7 @@
             <ScrollViewer Grid.Row="1">
                 <StackPanel Orientation="Vertical" >
 
+                    <!--
                     <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="5,2,5,2">
                         <TextBlock Text="test" TextDecorations="Underline" FontWeight="Bold"/>
                         <Grid>
@@ -138,11 +139,9 @@
                             <TextBlock Grid.Column="0" Text="File" HorizontalAlignment="Center" />
                             <TextBox Grid.Column="1" IsReadOnlyCaretVisible="True" IsReadOnly="True" Text="{Binding Debug.Value}" AllowDrop="True">
                                 <i:Interaction.Triggers>
-                                    <!--
                                     <i:EventTrigger EventName="Drop">
                                         <rp:EventToReactiveCommand Command="{Binding OnDebug2}" />
                                     </i:EventTrigger>
-                                    -->
                                     <i:EventTrigger EventName="PreviewDragOver">
                                         <prism:InvokeCommandAction Command="{Binding PreviewDragOver}" />
                                     </i:EventTrigger>
@@ -166,38 +165,7 @@
                         </Grid>
                         <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
                     </StackPanel>
-                    <ContentControl>
-                        <ContentControl.Style>
-                            <Style TargetType="{x:Type ContentControl}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Devices/HasSerialService.Value}" Value="true">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <!-- SerialService GUI -->
-                                                <ControlTemplate>
-                                                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="5,2,5,2">
-                                                        <TextBlock Text="Serial Service" TextDecorations="Underline" FontWeight="Bold"/>
-                                                        <StackPanel>
-                                                            <TextBlock Text="Send"/>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBox Width="200" Text="{Binding Devices/SerialService.SendData.Value}"/>
-                                                                <Button Content="Send" Command="{Binding Devices/SerialService.OnSend}"/>
-                                                            </StackPanel>
-                                                        </StackPanel>
-                                                        <StackPanel>
-                                                            <TextBlock Text="Recv:"/>
-                                                            <TextBlock Text="{Binding Devices/SerialService.RecvData.Value}"/>
-                                                        </StackPanel>
-                                                        <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ContentControl.Style>
-                    </ContentControl>
+                    -->
                     <ContentControl>
                         <ContentControl.Style>
                             <Style TargetType="{x:Type ContentControl}">
@@ -238,6 +206,38 @@
                                                             <TextBlock Grid.Column="0" Text="Status:" HorizontalAlignment="Center" />
                                                             <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{Binding Devices/DataTransService.SendStatus.Value}" HorizontalAlignment="Left" />
                                                         </Grid>
+                                                        <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                    <ContentControl>
+                        <ContentControl.Style>
+                            <Style TargetType="{x:Type ContentControl}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Devices/HasSerialService.Value}" Value="true">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <!-- SerialService GUI -->
+                                                <ControlTemplate>
+                                                    <StackPanel Orientation="Vertical" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="5,2,5,2">
+                                                        <TextBlock Text="Serial Service" TextDecorations="Underline" FontWeight="Bold"/>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Send"/>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBox Width="200" Text="{Binding Devices/SerialService.SendData.Value}"/>
+                                                                <Button Content="Send" Command="{Binding Devices/SerialService.OnSend}"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Recv:"/>
+                                                            <TextBlock Text="{Binding Devices/SerialService.RecvData.Value}"/>
+                                                        </StackPanel>
                                                         <Border BorderBrush="#404040" BorderThickness="0,0,0,1" Margin="0,2,0,0" />
                                                     </StackPanel>
                                                 </ControlTemplate>

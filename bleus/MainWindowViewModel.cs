@@ -228,7 +228,7 @@ namespace bleus
                 }
                 if (updateList)
                 {
-                    deviceCV.Refresh();
+                   // deviceCV.Refresh();
                 }
             }
         }

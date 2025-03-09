@@ -38,7 +38,7 @@ namespace bleus.BLE
         {
             device = dev;
             // 
-            if (Timestamp < args.Timestamp)
+            //if (Timestamp < args.Timestamp)
             {
                 Timestamp = now;
                 RawSignalStrengthInDBm = args.RawSignalStrengthInDBm;
