@@ -469,13 +469,13 @@ namespace bleus.BleViewModel
                     TransDataCancellationTokenSource = new CancellationTokenSource();
 
                     // ファイルをバイナリで開いて送信準備
-                    if (!packetSend.StartSendText(SendText.Value, (int)DataTransTextType.DynamicSignageU1))
+                    if (!packetSend.StartSendText(SendText.Value, (int)SendTextType.Value))
                     {
                         SendStatus.Value = "Error: Failed to text";
                         return;
                     }
 
-                    await DoTransData(DataTransDataType.data_text, (int)DataTransTextType.DynamicSignageU1);
+                    await DoTransData(DataTransDataType.data_text, (int)SendTextType.Value);
                 }
             }
             catch (Exception e)
