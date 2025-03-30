@@ -4,6 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:bleus"
+        xmlns:util="clr-namespace:Utility"
+        xmlns:ble="clr-namespace:bleus.BleViewModel"
         xmlns:rp="clr-namespace:Reactive.Bindings.Interactivity;assembly=ReactiveProperty.WPF"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:prism="http://prismlibrary.com/"
@@ -179,6 +181,18 @@
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="50"/>
+                                                                <ColumnDefinition Width="150"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="80"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="Text" HorizontalAlignment="Center" />
+                                                            <ComboBox Grid.Column="1" ItemsSource="{Binding Source={util:EnumBindingSource {x:Type ble:DataTransTextType}}}" SelectedValue="{Binding Devices/DataTransService.SendTextType.Value}" />
+                                                            <TextBox Grid.Column="2" Text="{Binding Devices/DataTransService.SendText.Value}" />
+                                                            <Button Grid.Column="3" Content="Send" Command="{Binding Devices/DataTransService.OnSendText}" IsEnabled="{Binding Devices/DataTransService.IsSendOk.Value}" Margin="10,0,10,0"/>
+                                                        </Grid>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="50"/>
                                                                 <ColumnDefinition Width="*"/>
                                                                 <ColumnDefinition Width="80"/>
                                                             </Grid.ColumnDefinitions>
@@ -196,7 +210,7 @@
                                                                     </i:EventTrigger>
                                                                 </i:Interaction.Triggers>
                                                             </TextBox>
-                                                            <Button Grid.Column="2" Content="Send" Command="{Binding Devices/DataTransService.OnSendFile}" IsEnabled="{Binding Devices/DataTransService.IsOkSendFile.Value}" Margin="10,0,10,0"/>
+                                                            <Button Grid.Column="2" Content="Send" Command="{Binding Devices/DataTransService.OnSendFile}" IsEnabled="{Binding Devices/DataTransService.IsSendOk.Value}" Margin="10,0,10,0"/>
                                                         </Grid>
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>

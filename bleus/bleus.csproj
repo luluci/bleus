@@ -59,6 +59,8 @@
     <Compile Include="BleViewModel\DataTrans.cs" />
     <Compile Include="BleViewModel\SerialService.cs" />
     <Compile Include="Utility\BindableBase.cs" />
+    <Compile Include="Utility\EnumBindingSourceExtension.cs" />
+    <Compile Include="Utility\EnumDisplayTypeConverter.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

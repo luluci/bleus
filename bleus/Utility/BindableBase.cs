@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace bleus.Utility
+namespace Utility
 {
     public abstract class BindableBase : INotifyPropertyChanged
     {

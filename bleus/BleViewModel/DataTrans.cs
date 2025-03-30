@@ -2,6 +2,8 @@
 using Reactive.Bindings.Extensions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
@@ -10,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using System.Reactive.Linq;
 
 namespace bleus.BleViewModel
 {
@@ -21,7 +24,20 @@ namespace bleus.BleViewModel
     }
     enum DataTransDataType : byte
     {
-        file_PNG
+        data_setting, // 設定データ
+        data_text,    // テキストデータ
+        file_PNG,     // ファイル:PNG
+    }
+
+    [TypeConverter(typeof(Utility.EnumDisplayTypeConverter))]
+    internal enum DataTransTextType
+    {
+        [Display(Name = "サイネージ上段1")]
+        DynamicSignageU1,
+        [Display(Name = "サイネージ下段1")]
+        DynamicSignageD1,
+        [Display(Name = "サイネージ下段2")]
+        DynamicSignageD2,
     }
 
     // data_trans_packet_declare, data_trans_packet_contentの管理
@@ -36,8 +52,11 @@ namespace bleus.BleViewModel
         public byte[] DeclareData { get; private set; } = new byte[DeclarePacketSize];
         public byte[] ContentData { get; private set; } = new byte[ContentPacketSize];
 
+        // 送信データストリーム
+        System.IO.Stream stream;
+
         System.IO.FileStream fs;
-        UInt32 filesize;
+        UInt32 datasize;
         public UInt32 NextPage;    // 次回送信ページ番号, 0開始としている
         UInt32 restSize;    // 残り送信サイズ
         public UInt32 MaxPage;     // 最大ページ数=転送データ全体分割数
@@ -47,22 +66,49 @@ namespace bleus.BleViewModel
         {
         }
 
-        public bool Start(string filepath)
+        public bool StartSendText(string text, int subType)
+        {
+            try
+            {
+                // textをUTF-8のバイト列に変換
+                var textBytes = System.Text.Encoding.UTF8.GetBytes(text);
+                stream = new System.IO.MemoryStream(textBytes);
+                //
+                datasize = (UInt32)textBytes.Length;
+                restSize = datasize;
+                NextPage = 0;
+                MaxPage = (UInt32)Math.Ceiling((double)datasize / ContentBodySize);
+                sendSize = ContentBodySize;
+
+                //
+                InitDeclareData(DataTransDataType.data_text, subType);
+                InitContentData(DataTransDataType.data_text, subType);
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+
+        public bool StartSendFile(string filepath, DataTransDataType dataType, int subType)
         {
             try
             {
                 // ファイルをバイナリで開く
                 fs = new System.IO.FileStream(filepath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                stream = fs;
                 // ファイル情報取得
-                filesize = (UInt32)fs.Length;
-                restSize = filesize;
+                datasize = (UInt32)fs.Length;
+                restSize = datasize;
                 NextPage = 0;
-                MaxPage = (UInt32)Math.Ceiling((double)filesize / ContentBodySize);
+                MaxPage = (UInt32)Math.Ceiling((double)datasize / ContentBodySize);
                 sendSize = ContentBodySize;
 
                 //
-                InitDeclareData();
-                InitContentData();
+                InitDeclareData(DataTransDataType.file_PNG, 0);
+                InitContentData(DataTransDataType.file_PNG, 0);
 
                 return true;
             }
@@ -72,12 +118,12 @@ namespace bleus.BleViewModel
                 return false;
             }
         }
-        public void Close()
+        public void CloseFile()
         {
             fs.Close();
         }
 
-        void InitDeclareData()
+        void InitDeclareData(DataTransDataType dataType, int subType)
         {
             // Header
             // コマンド
@@ -85,20 +131,21 @@ namespace bleus.BleViewModel
             // ボディサイズ
             DeclareData[1] = DeclareBodySize;
             // 転送データ内容
-            DeclareData[2] = (byte)DataTransDataType.file_PNG;
+            DeclareData[2] = (byte)dataType;
             // 送信ページ番号:0開始
             DeclareData[3] = 0;
+            // 転送データ補助情報
+            DeclareData[4] = (byte)subType;
             // reserve
-            DeclareData[4] = 0;
             DeclareData[5] = 0;
             DeclareData[6] = 0;
             DeclareData[7] = 0;
 
             // Body
-            BitConverter.GetBytes(filesize).CopyTo(DeclareData, 8);
+            BitConverter.GetBytes(datasize).CopyTo(DeclareData, 8);
             BitConverter.GetBytes(MaxPage).CopyTo(DeclareData, 12);
         }
-        void InitContentData()
+        void InitContentData(DataTransDataType dataType, int subType)
         {
             // Header
             // コマンド
@@ -106,9 +153,11 @@ namespace bleus.BleViewModel
             // ボディサイズ
             ContentData[1] = ContentBodySize;
             // 転送データ内容
-            ContentData[2] = (byte)DataTransDataType.file_PNG;
+            ContentData[2] = (byte)dataType;
             // 送信ページ番号:0開始
             ContentData[3] = 0;
+            // 転送データ補助情報
+            DeclareData[4] = (byte)subType;
             // reserve
             ContentData[4] = 0;
             ContentData[5] = 0;
@@ -157,7 +206,7 @@ namespace bleus.BleViewModel
             // 送信ページ番号:0開始
             ContentData[3] = (byte)NextPage;
             // Body
-            var readSize = fs.Read(ContentData, 8, (int)sendSize);
+            var readSize = stream.Read(ContentData, 8, (int)sendSize);
             restSize -= (UInt32)readSize;
 
             return true;
@@ -243,6 +292,14 @@ namespace bleus.BleViewModel
 
         // VM
         public ReactivePropertySlim<string> SendStatus { get; set; }
+        public ReactivePropertySlim<bool> IsSending { get; set; }
+        public ReadOnlyReactivePropertySlim<bool> IsSendOk { get; set; }
+        // Text
+        public ReactivePropertySlim<string> SendText { get; set; }
+        public ReactivePropertySlim<DataTransTextType> SendTextType { get; set; }
+        public ReactivePropertySlim<bool> IsOkSendText { get; set; }
+        public AsyncReactiveCommand OnSendText { get; set; }
+        // File
         public ReactivePropertySlim<string> SendFile { get; set; }
         public ReactivePropertySlim<bool> IsOkSendFile { get; set; }
         public ReactiveCommand<System.Windows.DragEventArgs> PreviewDragOver { get; set; }
@@ -252,7 +309,7 @@ namespace bleus.BleViewModel
 
 
         //
-        public CancellationTokenSource SendFileCancellationTokenSource = null;
+        public CancellationTokenSource TransDataCancellationTokenSource = null;
 
         public DataTrans()
         {
@@ -261,6 +318,30 @@ namespace bleus.BleViewModel
             // VM
             SendStatus = new ReactivePropertySlim<string>(string.Empty);
             SendStatus.AddTo(Disposables);
+            // Text
+            SendTextType = new ReactivePropertySlim<DataTransTextType>(DataTransTextType.DynamicSignageU1);
+            SendTextType.AddTo(Disposables);
+            IsOkSendText = new ReactivePropertySlim<bool>(false);
+            IsOkSendText.AddTo(Disposables);
+            SendText = new ReactivePropertySlim<string>(string.Empty);
+            SendText
+                .Subscribe(x =>
+                {
+                    if (x.Length > 0)
+                    {
+                        IsOkSendText.Value = true;
+                    }
+                    else
+                    {
+                        IsOkSendText.Value = false;
+                    }
+                })
+                .AddTo(Disposables);
+            OnSendText = new AsyncReactiveCommand();
+            OnSendText
+                 .Subscribe(DoSendText)
+                 .AddTo(Disposables);
+            // File
             SendFile = new ReactivePropertySlim<string>(string.Empty);
             SendFile.AddTo(Disposables);
             IsOkSendFile = new ReactivePropertySlim<bool>(false);
@@ -281,6 +362,15 @@ namespace bleus.BleViewModel
             OnSendFile
                 .Subscribe(DoSendFile)
                 .AddTo(Disposables);
+            //
+            IsSending = new ReactivePropertySlim<bool>(false);
+            IsSending.AddTo(Disposables);
+            IsSendOk = Observable.Merge(
+                    IsOkSendText,
+                    IsOkSendFile,
+                    IsSending.Select(x => !x)
+                )
+                .ToReadOnlyReactivePropertySlim();
         }
 
         public async Task<bool> Setup(GattDeviceService service_)
@@ -330,9 +420,9 @@ namespace bleus.BleViewModel
 
         public void StopSendFile()
         {
-            if (SendFileCancellationTokenSource != null)
+            if (TransDataCancellationTokenSource != null)
             {
-                SendFileCancellationTokenSource.Cancel();
+                TransDataCancellationTokenSource.Cancel();
             }
         }
 
@@ -340,17 +430,61 @@ namespace bleus.BleViewModel
         {
             try
             {
+                IsSending.Value = true;
+
                 if (IsOkSendFile.Value)
                 {
-                    SendFileCancellationTokenSource = new CancellationTokenSource();
+                    TransDataCancellationTokenSource = new CancellationTokenSource();
+
+                    // ファイルをバイナリで開いて送信準備
+                    if (!packetSend.StartSendFile(SendFile.Value, DataTransDataType.file_PNG, 0))
+                    {
+                        SendStatus.Value = "Error: Failed to file open";
+                        return;
+                    }
 
                     //await Task.Run(DoSendFileImpl, SendFileCancellationTokenSource.Token);
-                    await DoSendFileImpl();
+                    await DoTransData(DataTransDataType.file_PNG, 0);
                 }
             }
             catch (Exception e)
             {
                 //Debug.WriteLine(e.Message);
+            }
+            finally
+            {
+                packetSend.CloseFile();
+                IsSending.Value = false;
+            }
+        }
+
+        private async Task DoSendText()
+        {
+            try
+            {
+                IsSending.Value = true;
+
+                if (IsOkSendText.Value)
+                {
+                    TransDataCancellationTokenSource = new CancellationTokenSource();
+
+                    // ファイルをバイナリで開いて送信準備
+                    if (!packetSend.StartSendText(SendText.Value, (int)DataTransTextType.DynamicSignageU1))
+                    {
+                        SendStatus.Value = "Error: Failed to text";
+                        return;
+                    }
+
+                    await DoTransData(DataTransDataType.data_text, (int)DataTransTextType.DynamicSignageU1);
+                }
+            }
+            catch (Exception e)
+            {
+                //Debug.WriteLine(e.Message);
+            }
+            finally
+            {
+                IsSending.Value = false;
             }
         }
 
@@ -367,18 +501,13 @@ namespace bleus.BleViewModel
             SendComplete,   //送信完了
             Cancel,         //送信キャンセル
         }
-        private async Task DoSendFileImpl()
+
+        private async Task DoTransData(DataTransDataType dataType, int subType)
         {
             // 送受信状態
             sendState = SendState.SendDeclare;
             bool stateTxRx = true;
             bool isComplete = false;
-            // ファイルをバイナリで開いて送信準備
-            if (!packetSend.Start(SendFile.Value))
-            {
-                SendStatus.Value = "Error: Failed to file open";
-                return;
-            }
 
             try
             {
@@ -391,7 +520,7 @@ namespace bleus.BleViewModel
                 while (!isComplete)
                 {
                     // キャンセル判定
-                    if (SendFileCancellationTokenSource.Token.IsCancellationRequested)
+                    if (TransDataCancellationTokenSource.Token.IsCancellationRequested)
                     {
                         SendStatus.Value = "Cancel";
                         break;
@@ -413,14 +542,14 @@ namespace bleus.BleViewModel
                     if (stateTxRx)
                     {
                         // 送信処理
-                        await DoSendFileSend(statusDelayCount);
+                        await DoTransDataSend(statusDelayCount);
                         stateTxRx = false;
                         timeoutRecvCount = 0;
                     }
                     else
                     {
                         // 受信待機
-                        var result = DoSendFileRecv();
+                        var result = DoTransDataRecv();
                         switch (result)
                         {
                             case RecvAnalyzeResult.WaitRecv:
@@ -453,10 +582,9 @@ namespace bleus.BleViewModel
             }
             finally
             {
-                packetSend.Close();
             }
         }
-        private async Task DoSendFileSend(int statusDelayCount)
+        private async Task DoTransDataSend(int statusDelayCount)
         {
             switch (sendState)
             {
@@ -478,7 +606,7 @@ namespace bleus.BleViewModel
                     break;
             }
         }
-        private RecvAnalyzeResult DoSendFileRecv()
+        private RecvAnalyzeResult DoTransDataRecv()
         {
             RecvAnalyzeResult result = RecvAnalyzeResult.WaitRecv;
 
